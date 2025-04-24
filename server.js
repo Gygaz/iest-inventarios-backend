@@ -31,7 +31,7 @@ app.use(cors({
   credentials: true               // if you're using cookies or sessions
 }));
 
-app.use(express.static(path.join(__dirname,'..','Vitalmed')));
+//app.use(express.static(path.join(__dirname,'..','Vitalmed')));
 
 app.use(express.json());
 
@@ -62,8 +62,9 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 app.post('/login', async(req, res) => {
     const {idInput, passwordInput} = req.body;
-    console.log(req.body);
-    let userInDatabase = await pool.query("SELECT EXISTS (SELECT * FROM usuarios WHERE id=$1)", [idInput]); //Query que regresa una columna bool dependiendo de la existencia de un renglon con el valor de username en la tabla usuarios
+    datos = req.body;
+    console.log(datos.id);
+    let userInDatabase = await pool.query("SELECT EXISTS (SELECT * FROM usuarios WHERE id=$1)", [datos.id]); //Query que regresa una columna bool dependiendo de la existencia de un renglon con el valor de username en la tabla usuarios
 
     console.log(userInDatabase);
     let user = await pool.query("SELECT * FROM usuarios WHERE id = $1", [idInput]);
