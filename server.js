@@ -5,125 +5,158 @@ const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const bodyParser = require('body-parser');
-require ('dotenv').config();
-const { Pool }  = require ('pg');
+require('dotenv').config();
+const { Pool } = require('pg');
 const cors = require('cors');
-
 const bcrypt = require('bcrypt');
-const salt_rounds = 10;
-
 const path = require('path');
 
 const app = express();
 const port = 3001;
-
-const {
-PG_HOST,
-PG_DB,
-PG_USER,
-PG_PASSWORD,
-SECRET,
-PG_PORT
-} = process.env
 
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true,
 }));
 
-//app.use(express.static(path.join(__dirname,'..','Vitalmed')));
-
 app.use(express.json());
 
 const pool = new Pool({
-    host: 'localhost',
-    database: 'iestinventarios',
-    user: PG_USER,
-    password: PG_PASSWORD,
-    max: 5,
-    connectionTimeoutMillis: 20000
+  host: 'localhost',
+  database: 'iestInventarios',
+  user: 'postgres',
+  password: 'mundo131626%',
+  max: 5,
+  connectionTimeoutMillis: 20000
 });
 
 app.use(session({
-    secret: 'placeholdersecret',
-    resave: false,
-    saveUninitialized: true,
-    store: new pgSession({
-        pool: pool
-    })
+  secret: 'placeholdersecret',
+  resave: false,
+  saveUninitialized: true,
+  store: new pgSession({
+    pool: pool,
+    createTableIfMissing: true
+  })
 }));
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.post('/login', async(req, res) => {
-    const {idInput, passwordInput} = req.body;
-    datos = req.body;
-    let userInDatabase = await pool.query("SELECT EXISTS (SELECT * FROM usuarios WHERE id=$1)", [datos.id]); //Query que regresa una columna bool dependiendo de la existencia de un renglon con el valor de username en la tabla usuarios
+// Endpoint de Login
+app.post('/login', async (req, res) => {
+  const { idInput, passwordInput } = req.body;
+  console.log('Intento de login recibido:', { idInput });
 
-    let user = await pool.query("SELECT * FROM usuarios WHERE id = $1", [datos.id]);
-    console.log(user.rows[0].password);
+  try {
+    // Verificar si el usuario existe
+    const userExists = await pool.query(
+      'SELECT * FROM usuarios WHERE id = $1', 
+      [idInput]
+    );
     
-    if(userInDatabase.rows[0].exists) {
-        hashedPassword = user.rows[0].password;
-        const passwordAuth = await bcrypt.compare(datos.password, hashedPassword);
-        if (passwordAuth) {
-            req.session.user = {
-                userId: user.rows[0].id,
-                userType: user.rows[0].tipo,
-            };
-            console.log('Usuario autenticado');
-            console.log (user.rows[0].tipo);
-            req.session.isAuth = true;
-            res.status(200).json({ redirectTo: '/home' });
-        }
-    } 
-    else 
-    {
+    if (userExists.rows.length === 0) {
+      console.log('Usuario no encontrado:', idInput);
+      return res.status(401).json({ message: 'ID o contraseña incorrectos' });
     }
-});
 
-app.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Error destroying session:', err);
-      return res.status(500).json({ message: 'Logout failed' });
+    const user = userExists.rows[0];
+    console.log('Usuario encontrado:', user);
+
+    // Verificar contraseña
+    const validPassword = await bcrypt.compare(passwordInput, user.password);
+    console.log('Resultado comparación contraseña:', validPassword);
+
+    if (!validPassword) {
+      console.log('Contraseña incorrecta para usuario:', idInput);
+      return res.status(401).json({ message: 'ID o contraseña incorrectos' });
     }
-    res.clearCookie('connect.sid');
-    res.status(200).json({ message: 'Logged out' });
-    console.log("logged out")
-  });
-});
 
-app.get('/user-info', (req, res) => {
-  if (req.session.user) {
-    res.json({ userType: req.session.user.userType, userId: req.session.user.userId });
-  } else {
-    res.status(401).json({ message: 'Not logged in' });
+    // Configurar sesión
+    req.session.user = {
+      userId: user.id,
+      userType: user.tipo,
+    };
+    req.session.isAuth = true;
+
+    console.log('Sesión creada para usuario:', user.id);
+    res.status(200).json({ 
+      redirectTo: '/home',
+      message: '¡Bienvenido!' 
+    });
+
+  } catch (err) {
+    console.error('Error en login:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 
-app.post('/register', async(req, res)=> {
-    const {id, tipo, password} = req.body;
-
-    console.log('Datos recibidos en el servidor: ', {id, tipo, password})
-
-    const hashedPassword = await bcrypt.hash(password, salt_rounds);
-
-
-    try{
-        await pool.query('INSERT INTO usuarios (id, tipo, password ) VALUES ($1, $2, $3);', [id, tipo, hashedPassword]);
-        res.status(200).json({ status: 'success', message: 'Datos subidos correctamente' });
-    } catch (err) {
-        console.error('Error subiendo los datos:',err);
-        res.status(500).json({status: 'error', message: 'Error subiendo los datos', error: err.message});
+// Endpoint de Logout
+app.post('/logout', (req, res) => {
+  console.log('Intento de logout');
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error destruyendo sesión:', err);
+      return res.status(500).json({ message: 'Error al cerrar sesión' });
     }
+    res.clearCookie('connect.sid');
+    console.log('Sesión cerrada exitosamente');
+    res.status(200).json({ message: 'Sesión cerrada' });
+  });
+});
+
+// Endpoint de Información de Usuario
+app.get('/user-info', (req, res) => {
+  console.log('Solicitud de información de usuario');
+  if (req.session.user) {
+    console.log('Usuario autenticado:', req.session.user);
+    res.json({ 
+      userType: req.session.user.userType, 
+      userId: req.session.user.userId 
+    });
+  } else {
+    console.log('Usuario no autenticado');
+    res.status(401).json({ message: 'No autenticado' });
+  }
+});
+
+// Endpoint de Registro
+app.post('/register', async (req, res) => {
+  const { id, tipo, password } = req.body;
+  console.log('Datos de registro recibidos:', { id, tipo });
+
+  try {
+    // Verificar si el usuario ya existe
+    const userExists = await pool.query(
+      'SELECT id FROM usuarios WHERE id = $1', 
+      [id]
+    );
+
+    if (userExists.rows.length > 0) {
+      console.log('ID ya registrado:', id);
+      return res.status(409).json({ message: 'El ID ya está registrado' });
+    }
+
+    // Crear nuevo usuario
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query(
+      'INSERT INTO usuarios (id, tipo, password) VALUES ($1, $2, $3)',
+      [id, tipo, hashedPassword]
+    );
+
+    console.log('Usuario registrado exitosamente:', id);
+    res.status(201).json({ message: 'Registro exitoso' });
+
+  } catch (err) {
+    console.error('Error en registro:', err);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
 });
 
 process.on('uncaughtException', function (err) {
-    console.log(err);
-}); 
+  console.log('Excepción no capturada:', err);
+});
 
 app.listen(port, () => {
-    console.log(`Servidor escuchando en http://localhost:${port}`);
+  console.log(`Servidor escuchando en http://localhost:${port}`);
 });
