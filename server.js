@@ -170,6 +170,18 @@ app.get('/cargarInventario', async(req,res) => {
   }
 })
 
+app.post('/updateFileSrc', async(req, res) => {
+  const {rowIndex, colName, imgSource} = req.body;
+  console.log("Recieved data for file source update: ", rowIndex, colName, imgSource);
+
+  try{
+    const result = await pool.query(`UPDATE articulos SET ${colName} = $1 WHERE id = $2`, [imgSource, rowIndex])
+  } catch (err) {
+    console.error('Error subiendo los datos: ', err);
+    res.status(500).json({status: 'error', message: 'Error subiendo los datos', error: err.message});
+  }
+})
+
 process.on('uncaughtException', function (err) {
   console.log('Excepción no capturada:', err);
 });
