@@ -23,7 +23,7 @@ app.use(express.json());
 
 const pool = new Pool({
   host: 'localhost',
-  database: 'iestInventarios',
+  database: 'iestinventarios',
   user: 'postgres',
   password: 'mundo131626%',
   max: 5,
@@ -152,6 +152,23 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor' });
   }
 });
+
+app.get('/cargarInventario', async(req,res) => {
+  console.log("Se recibio request para cargar inventario");
+  const {area} = req.query;
+  console.log("Area del request: ", area);
+
+  try{
+    let articulosArea = await pool.query(
+      "SELECT id, ruta_img, nombre, cant, ruta_pdf_instructivo, ruta_pdf_seguridad FROM articulos WHERE area = $1", [area]
+    );
+    console.log("Resultado: ", articulosArea.rows)
+    res.json(articulosArea.rows);
+  } catch (error) {
+    console.error("Error en el fetch de articulos: ", error);
+    res.status(500).json({ error: "Error fetching data from database"});
+  }
+})
 
 process.on('uncaughtException', function (err) {
   console.log('Excepción no capturada:', err);

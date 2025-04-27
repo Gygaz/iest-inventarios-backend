@@ -20,7 +20,10 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
+    "db-migrate-pg": "^1.5.2",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "node": "^22.15.0",

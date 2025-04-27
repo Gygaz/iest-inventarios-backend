@@ -5,3 +5,12 @@ CREATE TABLE usuarios (
   tipo TEXT NOT NULL DEFAULT 'normal' CHECK (tipo = 'admin' OR tipo = 'normal')
 );
 
+CREATE TABLE articulos (
+  id SERIAL PRIMARY KEY,
+  ruta_img TEXT,
+  nombre TEXT NOT NULL,
+  cant INT NOT NULL,
+  ruta_pdf_instructivo TEXT,
+  ruta_pdf_seguridad TEXT,
+  area TEXT NOT NULL DEFAULT 'serviciosGenerales' CHECK (area = 'serviciosGenerales' OR area = 'medicina ' OR area = 'gastronomia' OR area='cafeteria')
+)
