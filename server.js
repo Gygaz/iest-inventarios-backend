@@ -170,17 +170,27 @@ app.get('/cargarInventario', async(req,res) => {
   }
 })
 
-app.post('/updateFileSrc', async(req, res) => {
-  const {rowIndex, colName, imgSource} = req.body;
-  console.log("Recieved data for file source update: ", rowIndex, colName, imgSource);
+app.post('/updateChanges', async(req, res) => {
+  const {rowIndex, colName, newValue} = req.body;
+  console.log("Recieved data for file source update: ", rowIndex, colName, newValue);
 
   try{
-    const result = await pool.query(`UPDATE articulos SET ${colName} = $1 WHERE id = $2`, [imgSource, rowIndex])
+    const result = await pool.query(`UPDATE articulos SET ${colName} = $1 WHERE id = $2`, [newValue, rowIndex])
+
+    if (result.rowCount > 0) {
+      console.log("Update successful");
+      res.status(200).json({ status: 'success', message: 'Data updated successfully' });
+    } else {
+      // If no rows were updated, notify the client
+      res.status(404).json({ status: 'error', message: 'No matching record found to update' });
+    }
   } catch (err) {
-    console.error('Error subiendo los datos: ', err);
-    res.status(500).json({status: 'error', message: 'Error subiendo los datos', error: err.message});
+    console.error('Error updating data:', err);
+    res.status(500).json({ status: 'error', message: 'Error updating data', error: err.message });
   }
-})
+
+});
+
 
 process.on('uncaughtException', function (err) {
   console.log('Excepción no capturada:', err);
