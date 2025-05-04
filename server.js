@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const url = require('url');
 const express = require('express');
+const multer = require('multer');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const bodyParser = require('body-parser');
@@ -23,7 +24,7 @@ app.use(express.json());
 
 const pool = new Pool({
   host: 'localhost',
-  database: 'iestinventarios',
+  database: 'iestInventarios',
   user: 'postgres',
   password: 'mundo131626%',
   max: 5,
@@ -42,6 +43,24 @@ app.use(session({
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Carpeta donde se guardarán los archivos
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Nombre único para los archivos
+  },
+});
+
+// Servir archivos estáticos desde la carpeta 'uploads'
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
+const upload = multer({ storage: storage });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Endpoint de Login
 app.post('/login', async (req, res) => {
@@ -198,4 +217,35 @@ process.on('uncaughtException', function (err) {
 
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
+});
+
+// Endpoint para agregar artículo
+app.post('/addItem', upload.fields([  // Configura multer para recibir múltiples archivos
+  { name: 'ruta_img', maxCount: 1 },
+  { name: 'ruta_pdf_instructivo', maxCount: 1 },
+  { name: 'ruta_pdf_seguridad', maxCount: 1 }
+]), async (req, res) => {
+  // Desestructuración de los datos recibidos en el formulario
+  const { area, nombre, cant } = req.body;
+
+  // Recuperación de las rutas de los archivos subidos
+  const ruta_img = req.files.ruta_img ? req.files.ruta_img[0].path.replace(/\\/g, '/') : null;
+  const ruta_pdf_instructivo = req.files.ruta_pdf_instructivo ? req.files.ruta_pdf_instructivo[0].path.replace(/\\/g, '/') : null;
+  const ruta_pdf_seguridad = req.files.ruta_pdf_seguridad ? req.files.ruta_pdf_seguridad[0].path.replace(/\\/g, '/') : null;
+  
+
+  try {
+    // Inserción del artículo en la base de datos
+    const result = await pool.query(
+      `INSERT INTO articulos (area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_pdf_seguridad)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_pdf_seguridad]
+    );
+
+    console.log("Artículo agregado exitosamente:", result.rows[0]);
+    res.status(201).json({ message: 'Artículo agregado exitosamente', articulo: result.rows[0] });
+  } catch (error) {
+    console.error("Error al agregar artículo:", error);
+    res.status(500).json({ message: 'Error al agregar artículo', error: error.message });
+  }
 });
