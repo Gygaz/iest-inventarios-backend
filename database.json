@@ -3,7 +3,7 @@
       "driver": "pg",
       "user": "postgres",
       "host": "localhost",
-      "database": "iestinventarios",
-      "password": "123456"
+      "database": "iestInventarios",
+      "password": "mundo131626%"
     }
   }
