@@ -53,14 +53,39 @@ const storage = multer.diskStorage({
   },
 });
 
+
+
+// File filter to allow only images and pdfs
+const fileFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/pdf'
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido'), false);
+  }
+};
+
+const upload = multer({ storage, fileFilter });
+
 // Servir archivos estáticos desde la carpeta 'uploads'
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.post('/upload', upload.single('archivo'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo' });
+  }
 
-const upload = multer({ storage: storage });
+  const relativePath = `uploads/${req.file.filename}`;
+  const fileUrl = `http://localhost:3001/${relativePath}`;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  res.json({ message: 'Archivo subido correctamente', path: fileUrl });
+});
 
 // Endpoint de Login
 app.post('/login', async (req, res) => {
