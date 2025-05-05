@@ -10,7 +10,9 @@ CREATE TABLE articulos (
   ruta_img TEXT,
   nombre TEXT NOT NULL,
   cant INT NOT NULL,
+  ruta_img_instructivo TEXT,
   ruta_pdf_instructivo TEXT,
+  ruta_img_seguridad TEXT,
   ruta_pdf_seguridad TEXT,
   area TEXT NOT NULL DEFAULT 'serviciosGenerales' CHECK (area = 'serviciosGenerales' OR area = 'medicina ' OR area = 'gastronomia' OR area='cafeteria')
 )

@@ -10,6 +10,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const port = 3001;
@@ -39,6 +40,27 @@ app.use(session({
     createTableIfMissing: true
   })
 }));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'public', 'assets'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+// File filter to allow only images and pdfs
+const fileFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/pdf'
+  ];
+}
+
+const upload = multer({ storage, fileFilter });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -160,7 +182,7 @@ app.get('/cargarInventario', async(req,res) => {
 
   try{
     let articulosArea = await pool.query(
-      "SELECT id, ruta_img, nombre, cant, ruta_pdf_instructivo, ruta_pdf_seguridad FROM articulos WHERE area = $1", [area]
+      "SELECT id, ruta_img, nombre, cant, ruta_img_instructivo, ruta_pdf_instructivo, ruta_img_seguridad, ruta_pdf_seguridad FROM articulos WHERE area = $1", [area]
     );
     console.log("Resultado: ", articulosArea.rows)
     res.json(articulosArea.rows);
@@ -191,6 +213,10 @@ app.post('/updateChanges', async(req, res) => {
 
 });
 
+app.post('/upload', upload.single('file'), (req, res) => {
+  console.log('File uploaded:', req.file);
+  res.send('File uploaded successfully');
+});
 
 process.on('uncaughtException', function (err) {
   console.log('Excepción no capturada:', err);
