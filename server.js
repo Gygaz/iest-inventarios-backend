@@ -24,7 +24,7 @@ app.use(express.json());
 
 const pool = new Pool({
   host: 'localhost',
-  database: 'iestInventarios',
+  database: 'iestinventarios',
   user: 'postgres',
   password: 'mundo131626%',
   max: 5,
@@ -52,8 +52,6 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname)); // Nombre único para los archivos
   },
 });
-
-
 
 // File filter to allow only images and pdfs
 const fileFilter = (req, file, cb) => {
@@ -204,7 +202,7 @@ app.get('/cargarInventario', async(req,res) => {
 
   try{
     let articulosArea = await pool.query(
-      "SELECT id, ruta_img, nombre, cant, ruta_pdf_instructivo, ruta_pdf_seguridad FROM articulos WHERE area = $1", [area]
+      "SELECT * FROM articulos WHERE area = $1", [area]
     );
     console.log("Resultado: ", articulosArea.rows)
     res.json(articulosArea.rows);
@@ -273,4 +271,14 @@ app.post('/addItem', upload.fields([  // Configura multer para recibir múltiple
     console.error("Error al agregar artículo:", error);
     res.status(500).json({ message: 'Error al agregar artículo', error: error.message });
   }
+});
+
+app.post('/upload-thumbnail', upload.single('thumbnail'), (req, res) => {
+  console.log('Stored thumbnail at:', req.file.path);
+  res.json({ path: req.file.path.replace(/\\/g, '/') });
+});
+
+app.post('/upload-pdf', upload.single('pdf'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  res.json({ path: `uploads/${req.file.filename}` });
 });
