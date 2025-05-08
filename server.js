@@ -262,7 +262,6 @@ app.post('/addItem', upload.fields([  // Configura multer para recibir múltiple
   
 
   try {
-    // Update DB insert to include thumbnails if applicable
     const result = await pool.query(
       `INSERT INTO articulos 
         (area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_img_instructivo, ruta_pdf_seguridad, ruta_img_seguridad)
