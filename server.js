@@ -297,3 +297,19 @@ app.post('/upload-pdf', upload.single('pdf'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   res.json({ path: `uploads/${req.file.filename}` });
 });
+
+app.post('/deleteItems', async (req, res) => {
+  const { ids } = req.body;
+
+  try{
+    for(var i = 0; i < ids.length; i++){
+      await pool.query(
+        "DELETE FROM articulos WHERE id = $1", [ids[i]]
+      );
+    res.status(201).json({ message: 'Artículos borrados exitosamente'});
+    }
+  } catch (error) {
+    console.error("Error al borrar articulos", error);
+    res.status(500).json({ error: "Error deleting data from database"});
+  }
+});
