@@ -246,7 +246,9 @@ app.listen(port, () => {
 app.post('/addItem', upload.fields([  // Configura multer para recibir múltiples archivos
   { name: 'ruta_img', maxCount: 1 },
   { name: 'ruta_pdf_instructivo', maxCount: 1 },
-  { name: 'ruta_pdf_seguridad', maxCount: 1 }
+  { name: 'ruta_img_instructivo', maxCount: 1 },
+  { name: 'ruta_pdf_seguridad', maxCount: 1 },
+  { name: 'ruta_img_seguridad', maxCount: 1 }
 ]), async (req, res) => {
   // Desestructuración de los datos recibidos en el formulario
   const { area, nombre, cant } = req.body;
@@ -254,15 +256,29 @@ app.post('/addItem', upload.fields([  // Configura multer para recibir múltiple
   // Recuperación de las rutas de los archivos subidos
   const ruta_img = req.files.ruta_img ? req.files.ruta_img[0].path.replace(/\\/g, '/') : null;
   const ruta_pdf_instructivo = req.files.ruta_pdf_instructivo ? req.files.ruta_pdf_instructivo[0].path.replace(/\\/g, '/') : null;
+  const ruta_img_instructivo = req.files.ruta_img_instructivo?.[0]?.path.replace(/\\/g, '/') || null;
   const ruta_pdf_seguridad = req.files.ruta_pdf_seguridad ? req.files.ruta_pdf_seguridad[0].path.replace(/\\/g, '/') : null;
+  const ruta_img_seguridad = req.files.ruta_img_seguridad?.[0]?.path.replace(/\\/g, '/') || null;
   
 
   try {
-    // Inserción del artículo en la base de datos
+    // Update DB insert to include thumbnails if applicable
     const result = await pool.query(
-      `INSERT INTO articulos (area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_pdf_seguridad)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_pdf_seguridad]
+      `INSERT INTO articulos 
+        (area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_img_instructivo, ruta_pdf_seguridad, ruta_img_seguridad)
+       VALUES 
+        ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        area,
+        nombre,
+        cant,
+        ruta_img,
+        ruta_pdf_instructivo,
+        ruta_img_instructivo,
+        ruta_pdf_seguridad,
+        ruta_img_seguridad
+      ]
     );
 
     console.log("Artículo agregado exitosamente:", result.rows[0]);
