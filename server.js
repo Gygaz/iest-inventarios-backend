@@ -251,7 +251,7 @@ app.post('/addItem', upload.fields([  // Configura multer para recibir múltiple
   { name: 'ruta_img_seguridad', maxCount: 1 }
 ]), async (req, res) => {
   // Desestructuración de los datos recibidos en el formulario
-  const { area, nombre, cant } = req.body;
+  const { area, nombre, cant, capRecipiente } = req.body;
 
   // Recuperación de las rutas de los archivos subidos
   const ruta_img = req.files.ruta_img ? req.files.ruta_img[0].path.replace(/\\/g, '/') : null;
@@ -259,19 +259,21 @@ app.post('/addItem', upload.fields([  // Configura multer para recibir múltiple
   const ruta_img_instructivo = req.files.ruta_img_instructivo?.[0]?.path.replace(/\\/g, '/') || null;
   const ruta_pdf_seguridad = req.files.ruta_pdf_seguridad ? req.files.ruta_pdf_seguridad[0].path.replace(/\\/g, '/') : null;
   const ruta_img_seguridad = req.files.ruta_img_seguridad?.[0]?.path.replace(/\\/g, '/') || null;
+  let cant_vol =  cant * capRecipiente;
   
 
   try {
     const result = await pool.query(
       `INSERT INTO articulos 
-        (area, nombre, cant, ruta_img, ruta_pdf_instructivo, ruta_img_instructivo, ruta_pdf_seguridad, ruta_img_seguridad)
+        (area, nombre, cant, cant_vol, ruta_img, ruta_pdf_instructivo, ruta_img_instructivo, ruta_pdf_seguridad, ruta_img_seguridad)
        VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         area,
         nombre,
         cant,
+        cant_vol,
         ruta_img,
         ruta_pdf_instructivo,
         ruta_img_instructivo,
