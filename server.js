@@ -313,3 +313,24 @@ app.post('/deleteItems', async (req, res) => {
     res.status(500).json({ error: "Error deleting data from database"});
   }
 });
+
+app.get('/contarArticulos', async(req, res) => {
+  try {
+    const nServiciosGenerales = await pool.query("SELECT COUNT(*) FROM articulos WHERE area = 'serviciosGenerales'");
+    const nMedicina = await pool.query("SELECT COUNT(*) FROM articulos WHERE area = 'medicina'");
+    const nGastronomia = await pool.query("SELECT COUNT(*) FROM articulos WHERE area = 'gastronomia'");
+    const nCafeteria = await pool.query("SELECT COUNT(*) FROM articulos WHERE area = 'cafeteria'");
+    const nTotal = await pool.query("SELECT COUNT(*) FROM articulos");
+
+    res.json({
+      serviciosGenerales: nServiciosGenerales.rows[0].count,
+      medicina: nMedicina.rows[0].count,
+      gastronomia: nGastronomia.rows[0].count,
+      cafeteria: nCafeteria.rows[0].count,
+      total: nTotal.rows[0].count
+    });
+  } catch (error) {
+    console.error('Error fetching counts:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
